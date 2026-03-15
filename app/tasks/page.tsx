@@ -29,7 +29,7 @@ export default function TasksPage() {
   const filtered = tasks.filter(t => {
     if (filter === 'overdue') return !t.completed && new Date(t.due_at) < now
     if (filter === 'completed') return t.completed
-    return true
+    return !t.completed
   })
 
   async function toggleTask(task: TaskRow) {
