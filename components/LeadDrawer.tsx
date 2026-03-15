@@ -31,6 +31,7 @@ export default function LeadDrawer({
   const [callLogs, setCallLogs] = useState<CallLog[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
   const [note, setNote] = useState('')
+  const [callDate, setCallDate] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [editFields, setEditFields] = useState<Partial<Lead>>({})
   const [saving, setSaving] = useState(false)
@@ -69,11 +70,11 @@ export default function LeadDrawer({
   async function logCall() {
     if (!note.trim()) return
     setSubmitting(true)
-    const now = new Date().toISOString()
+    const calledAt = callDate ? new Date(callDate).toISOString() : new Date().toISOString()
 
     await supabase.from('call_log').insert({
       business_phone: phone,
-      called_at: now,
+      called_at: calledAt,
       note: note.trim(),
     })
 
@@ -83,10 +84,11 @@ export default function LeadDrawer({
       business_phone: phone,
       status: current?.status ?? 'lead',
       call_count: (current?.call_count ?? 0) + 1,
-      last_called_at: now,
+      last_called_at: calledAt,
     }, { onConflict: 'business_phone' })
 
     setNote('')
+    setCallDate('')
     setSubmitting(false)
     fetchCallLogs()
     onUpdate()
@@ -360,6 +362,16 @@ export default function LeadDrawer({
               {/* Log call form */}
               <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: 16 }}>
                 <Label>Log a Call</Label>
+                <input
+                  type="datetime-local"
+                  value={callDate}
+                  onChange={e => setCallDate(e.target.value)}
+                  style={{ ...inputStyle, marginTop: 8 }}
+                  placeholder="Leave blank for now"
+                />
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                  Leave empty to use current time
+                </div>
                 <textarea
                   placeholder="Call notes..."
                   value={note}
