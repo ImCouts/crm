@@ -72,13 +72,14 @@ export default function LeadsPage() {
     if (!createForm.business_phone.trim() || !createForm.company_name.trim()) return
     setCreating(true)
     setCreateError('')
+    const stripNonDigits = (v: string) => v.replace(/\D/g, '')
     const { error } = await supabase.from('leads').insert({
-      business_phone: createForm.business_phone.trim(),
+      business_phone: stripNonDigits(createForm.business_phone),
       company_name: createForm.company_name.trim(),
       owner_name: createForm.owner_name.trim() || null,
       owner_phone: createForm.owner_phone.trim() || null,
       website: createForm.website.trim() || null,
-      rbq: createForm.rbq.trim() || null,
+      rbq: stripNonDigits(createForm.rbq) || null,
       approx_rev: createForm.approx_rev ? Number(createForm.approx_rev) : null,
       employee_count: createForm.employee_count ? Number(createForm.employee_count) : null,
     })
