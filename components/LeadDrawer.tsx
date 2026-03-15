@@ -38,6 +38,7 @@ export default function LeadDrawer({
   const [addingTask, setAddingTask] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [activeStatus, setActiveStatus] = useState(lead.lead_status?.status ?? 'lead')
   const overlayRef = useRef<HTMLDivElement>(null)
 
   const phone = lead.business_phone
@@ -101,6 +102,7 @@ export default function LeadDrawer({
   }
 
   async function updateStatus(status: string) {
+    setActiveStatus(status)
     await supabase.from('lead_status').upsert({
       business_phone: phone,
       status,
@@ -220,7 +222,7 @@ export default function LeadDrawer({
                 <Label>Status</Label>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
                   {STATUS_OPTIONS.map(s => {
-                    const active = (lead.lead_status?.status ?? 'lead') === s
+                    const active = activeStatus === s
                     return (
                       <button
                         key={s}
