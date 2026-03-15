@@ -142,6 +142,11 @@ export default function LeadDrawer({
     fetchTasks()
   }
 
+  async function deleteTask(id: string) {
+    await supabase.from('tasks').delete().eq('id', id)
+    fetchTasks()
+  }
+
   const fieldVal = (key: keyof Lead) => (editFields[key] !== undefined ? editFields[key] : lead[key]) as string | number | null
 
   return (
@@ -505,6 +510,25 @@ export default function LeadDrawer({
                               {overdue && ' — OVERDUE'}
                             </div>
                           </div>
+                          <button
+                            onClick={() => deleteTask(task.id)}
+                            title="Delete task"
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'var(--text-muted)',
+                              cursor: 'pointer',
+                              fontSize: 16,
+                              lineHeight: 1,
+                              padding: '2px 6px',
+                              borderRadius: 4,
+                              flexShrink: 0,
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.color = 'var(--danger)')}
+                            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+                          >
+                            ×
+                          </button>
                         </div>
                       )
                     })}
