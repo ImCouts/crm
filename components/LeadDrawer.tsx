@@ -20,10 +20,12 @@ export default function LeadDrawer({
   lead,
   onClose,
   onUpdate,
+  onDelete,
 }: {
   lead: LeadRow
   onClose: () => void
   onUpdate: () => void
+  onDelete?: () => void
 }) {
   const [tab, setTab] = useState<Tab>('overview')
   const [callLogs, setCallLogs] = useState<CallLog[]>([])
@@ -34,6 +36,8 @@ export default function LeadDrawer({
   const [saving, setSaving] = useState(false)
   const [newTask, setNewTask] = useState({ title: '', description: '', due_at: '' })
   const [addingTask, setAddingTask] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const overlayRef = useRef<HTMLDivElement>(null)
 
   const phone = lead.business_phone
@@ -103,6 +107,17 @@ export default function LeadDrawer({
       call_count: lead.lead_status?.call_count ?? 0,
     }, { onConflict: 'business_phone' })
     onUpdate()
+  }
+
+  async function deleteLead() {
+    setDeleting(true)
+    // Delete related records first, then the lead itself
+    await supabase.from('tasks').delete().eq('business_phone', phone)
+    await supabase.from('call_log').delete().eq('business_phone', phone)
+    await supabase.from('lead_status').delete().eq('business_phone', phone)
+    await supabase.from('leads').delete().eq('business_phone', phone)
+    setDeleting(false)
+    onDelete?.()
   }
 
   async function addTask() {
@@ -229,6 +244,10 @@ export default function LeadDrawer({
                 </div>
               </div>
 
+              <div>
+                <EditField label="Company Name" value={fieldVal('company_name') as string | null} onChange={v => setEditFields(p => ({ ...p, company_name: v }))} />
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <EditField label="Owner Name" value={fieldVal('owner_name') as string | null} onChange={v => setEditFields(p => ({ ...p, owner_name: v }))} />
                 <EditField label="Owner Phone" value={fieldVal('owner_phone') as string | null} onChange={v => setEditFields(p => ({ ...p, owner_phone: v }))} />
@@ -268,6 +287,62 @@ export default function LeadDrawer({
                 <span>Created: <strong style={{ color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
                   {new Date(lead.created_at).toLocaleDateString()}
                 </strong></span>
+              </div>
+
+              {/* Delete */}
+              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 16 }}>
+                {!confirmDelete ? (
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid var(--danger)',
+                      borderRadius: 6,
+                      padding: '8px 20px',
+                      color: 'var(--danger)',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Delete Lead
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 13, color: 'var(--danger)' }}>Delete this lead and all related data?</span>
+                    <button
+                      onClick={deleteLead}
+                      disabled={deleting}
+                      style={{
+                        background: 'var(--danger)',
+                        border: 'none',
+                        borderRadius: 6,
+                        padding: '6px 16px',
+                        color: '#000',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: deleting ? 'not-allowed' : 'pointer',
+                        opacity: deleting ? 0.7 : 1,
+                      }}
+                    >
+                      {deleting ? 'Deleting...' : 'Confirm'}
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(false)}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid var(--border)',
+                        borderRadius: 6,
+                        padding: '6px 16px',
+                        color: 'var(--text-secondary)',
+                        fontSize: 13,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
