@@ -43,6 +43,13 @@ export type Task = {
   created_at: string
 }
 
+export type Note = {
+  id: string
+  business_phone: string
+  content: string
+  created_at: string
+}
+
 export type LeadWithStatus = Lead & {
   lead_status: LeadStatus | null
 }

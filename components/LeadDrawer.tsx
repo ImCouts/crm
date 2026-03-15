@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { supabase, type Lead, type LeadStatus, type CallLog, type Task } from '@/lib/supabase'
+import { supabase, type Lead, type LeadStatus, type CallLog, type Task, type Note } from '@/lib/supabase'
 
 type LeadRow = Lead & { lead_status: LeadStatus | null }
 
@@ -14,7 +14,7 @@ const STATUS_LABELS: Record<string, string> = {
   lost: 'Lost',
 }
 
-type Tab = 'overview' | 'calls' | 'tasks'
+type Tab = 'overview' | 'calls' | 'tasks' | 'notes'
 
 export default function LeadDrawer({
   lead,
@@ -37,9 +37,12 @@ export default function LeadDrawer({
   const [saving, setSaving] = useState(false)
   const [newTask, setNewTask] = useState({ title: '', description: '', due_at: '' })
   const [addingTask, setAddingTask] = useState(false)
+  const [notes, setNotes] = useState<Note[]>([])
+  const [noteContent, setNoteContent] = useState('')
+  const [addingNote, setAddingNote] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [activeStatus, setActiveStatus] = useState(lead.lead_status?.status ?? 'lead')
+  const [activeStatus, setActiveStatus] = useState<string>(lead.lead_status?.status ?? 'lead')
   const overlayRef = useRef<HTMLDivElement>(null)
 
   const phone = lead.business_phone
@@ -47,12 +50,39 @@ export default function LeadDrawer({
   useEffect(() => {
     fetchCallLogs()
     fetchTasks()
+    fetchNotes()
   }, [phone])
 
   async function deleteCall(id: string) {
     await supabase.from('call_log').delete().eq('id', id)
     fetchCallLogs()
     onUpdate()
+  }
+
+  async function fetchNotes() {
+    const { data } = await supabase
+      .from('notes')
+      .select('*')
+      .eq('business_phone', phone)
+      .order('created_at', { ascending: false })
+    setNotes(data ?? [])
+  }
+
+  async function addNote() {
+    if (!noteContent.trim()) return
+    setAddingNote(true)
+    await supabase.from('notes').insert({
+      business_phone: phone,
+      content: noteContent.trim(),
+    })
+    setNoteContent('')
+    setAddingNote(false)
+    fetchNotes()
+  }
+
+  async function deleteNote(id: string) {
+    await supabase.from('notes').delete().eq('id', id)
+    fetchNotes()
   }
 
   async function fetchCallLogs() {
@@ -122,6 +152,7 @@ export default function LeadDrawer({
   async function deleteLead() {
     setDeleting(true)
     // Delete related records first, then the lead itself
+    await supabase.from('notes').delete().eq('business_phone', phone)
     await supabase.from('tasks').delete().eq('business_phone', phone)
     await supabase.from('call_log').delete().eq('business_phone', phone)
     await supabase.from('lead_status').delete().eq('business_phone', phone)
@@ -201,7 +232,7 @@ export default function LeadDrawer({
 
         {/* Tabs */}
         <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', padding: '0 24px' }}>
-          {(['overview', 'calls', 'tasks'] as Tab[]).map(t => (
+          {(['overview', 'calls', 'tasks', 'notes'] as Tab[]).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -571,6 +602,93 @@ export default function LeadDrawer({
                         </div>
                       )
                     })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* NOTES TAB */}
+          {tab === 'notes' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Add note form */}
+              <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: 16 }}>
+                <Label>Add Note</Label>
+                <textarea
+                  placeholder="Write a note..."
+                  value={noteContent}
+                  onChange={e => setNoteContent(e.target.value)}
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 6,
+                    padding: '10px 12px',
+                    color: 'var(--text-primary)',
+                    fontSize: 13,
+                    resize: 'vertical',
+                    outline: 'none',
+                    marginTop: 8,
+                    fontFamily: 'inherit',
+                  }}
+                />
+                <button
+                  onClick={addNote}
+                  disabled={addingNote || !noteContent.trim()}
+                  style={{
+                    marginTop: 10,
+                    background: 'var(--accent)',
+                    color: '#000',
+                    border: 'none',
+                    borderRadius: 6,
+                    padding: '8px 20px',
+                    fontWeight: 600,
+                    fontSize: 13,
+                    cursor: addingNote || !noteContent.trim() ? 'not-allowed' : 'pointer',
+                    opacity: addingNote || !noteContent.trim() ? 0.5 : 1,
+                  }}
+                >
+                  {addingNote ? 'Saving...' : 'Save Note'}
+                </button>
+              </div>
+
+              {/* Notes list */}
+              <div>
+                <Label>Notes</Label>
+                {notes.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 8 }}>No notes yet.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                    {notes.map(n => (
+                      <div key={n.id} style={{ background: 'var(--bg-elevated)', borderRadius: 6, padding: '12px 14px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace', marginBottom: 4 }}>
+                            {new Date(n.created_at).toLocaleString()}
+                          </div>
+                          <div style={{ fontSize: 13, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>{n.content}</div>
+                        </div>
+                        <button
+                          onClick={() => deleteNote(n.id)}
+                          title="Delete note"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            fontSize: 16,
+                            lineHeight: 1,
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                            flexShrink: 0,
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.color = 'var(--danger)')}
+                          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
