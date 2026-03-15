@@ -49,6 +49,12 @@ export default function LeadDrawer({
     fetchTasks()
   }, [phone])
 
+  async function deleteCall(id: string) {
+    await supabase.from('call_log').delete().eq('id', id)
+    fetchCallLogs()
+    onUpdate()
+  }
+
   async function fetchCallLogs() {
     const { data } = await supabase
       .from('call_log')
@@ -419,11 +425,32 @@ export default function LeadDrawer({
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
                     {callLogs.map(c => (
-                      <div key={c.id} style={{ background: 'var(--bg-elevated)', borderRadius: 6, padding: '12px 14px', border: '1px solid var(--border-subtle)' }}>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace', marginBottom: 4 }}>
-                          {new Date(c.called_at).toLocaleString()}
+                      <div key={c.id} style={{ background: 'var(--bg-elevated)', borderRadius: 6, padding: '12px 14px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace', marginBottom: 4 }}>
+                            {new Date(c.called_at).toLocaleString()}
+                          </div>
+                          <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{c.note ?? <em>No note</em>}</div>
                         </div>
-                        <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{c.note ?? <em>No note</em>}</div>
+                        <button
+                          onClick={() => deleteCall(c.id)}
+                          title="Delete call"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            fontSize: 16,
+                            lineHeight: 1,
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                            flexShrink: 0,
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.color = 'var(--danger)')}
+                          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+                        >
+                          ×
+                        </button>
                       </div>
                     ))}
                   </div>
