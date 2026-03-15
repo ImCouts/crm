@@ -71,6 +71,14 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 | completed      | boolean     | default false |
 | created_at     | timestamptz | default now() |
 
+### notes
+| column         | type        | notes                                        |
+|----------------|-------------|----------------------------------------------|
+| id             | uuid        | Primary Key, default gen_random_uuid()       |
+| business_phone | text        | FK → leads.business_phone, on delete cascade |
+| content        | text        | not null                                     |
+| created_at     | timestamptz | default now()                                |
+
 ---
 
 ## Auth
@@ -111,6 +119,10 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 - "Add Task" form: title, description, due_at
 - Overdue tasks highlighted in red
 - Mark task as complete inline
+- Notes tab: shows all notes for this lead (notes ordered by created_at desc)
+- "Add Note" form: content textarea + submit button
+- On submit: INSERT into notes (business_phone, content)
+- Each note displays content + formatted created_at timestamp
 
 ### /pipeline (Kanban)
 - 5 columns: Lead → Discovery Call → Interested → Booked → lost
