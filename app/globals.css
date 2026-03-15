@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: dark;
   --bg-base: #0f0f0f;
   --bg-surface: #1a1a1a;
   --bg-elevated: #242424;
@@ -51,4 +52,24 @@ body {
 ::selection {
   background: var(--accent-dim);
   color: var(--accent);
+}
+
+/* Dark mode date/time picker */
+input[type="datetime-local"],
+input[type="date"],
+input[type="time"] {
+  color-scheme: dark;
+}
+::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+::-webkit-datetime-edit-fields-wrapper {
+  color: var(--text-primary);
+}
+
+/* Dark mode select dropdown */
+select,
+option {
+  color-scheme: dark;
 }
