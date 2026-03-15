@@ -37,6 +37,11 @@ export default function TasksPage() {
     fetchTasks()
   }
 
+  async function deleteTask(id: string) {
+    await supabase.from('tasks').delete().eq('id', id)
+    fetchTasks()
+  }
+
   async function addTask() {
     if (!newTask.title.trim() || !newTask.due_at) return
     setAdding(true)
@@ -166,12 +171,13 @@ export default function TasksPage() {
                 <th style={thStyle}>Task</th>
                 <th style={thStyle}>Company</th>
                 <th style={thStyle}>Due</th>
+                <th style={{ ...thStyle, width: 40 }}></th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={5} style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
                     No tasks found.
                   </td>
                 </tr>
@@ -207,6 +213,27 @@ export default function TasksPage() {
                     <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontSize: 12, color: overdue ? 'var(--danger)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                       {new Date(task.due_at).toLocaleString()}
                       {overdue && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700 }}>OVERDUE</span>}
+                    </td>
+                    <td style={{ padding: '10px 8px', width: 40 }}>
+                      <button
+                        onClick={() => deleteTask(task.id)}
+                        title="Delete task"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          fontSize: 16,
+                          lineHeight: 1,
+                          padding: '2px 6px',
+                          borderRadius: 4,
+                          transition: 'color 0.1s',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.color = 'var(--danger)')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+                      >
+                        ×
+                      </button>
                     </td>
                   </tr>
                 )
