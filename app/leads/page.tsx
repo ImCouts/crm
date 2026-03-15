@@ -23,12 +23,39 @@ const STATUS_COLORS: Record<string, string> = {
   lost: '#f87171',
 }
 
+const emptyForm = {
+  business_phone: '',
+  company_name: '',
+  owner_name: '',
+  owner_phone: '',
+  website: '',
+  rbq: '',
+  approx_rev: '',
+  employee_count: '',
+}
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  background: 'var(--bg-surface)',
+  border: '1px solid var(--border)',
+  borderRadius: 6,
+  padding: '8px 10px',
+  color: 'var(--text-primary)',
+  fontSize: 13,
+  outline: 'none',
+  fontFamily: 'inherit',
+}
+
 export default function LeadsPage() {
   const [leads, setLeads] = useState<LeadRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedLead, setSelectedLead] = useState<LeadRow | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [createForm, setCreateForm] = useState(emptyForm)
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState('')
 
   const fetchLeads = useCallback(async () => {
     const { data } = await supabase
@@ -40,6 +67,31 @@ export default function LeadsPage() {
   }, [])
 
   useEffect(() => { fetchLeads() }, [fetchLeads])
+
+  async function createLead() {
+    if (!createForm.business_phone.trim() || !createForm.company_name.trim()) return
+    setCreating(true)
+    setCreateError('')
+    const { error } = await supabase.from('leads').insert({
+      business_phone: createForm.business_phone.trim(),
+      company_name: createForm.company_name.trim(),
+      owner_name: createForm.owner_name.trim() || null,
+      owner_phone: createForm.owner_phone.trim() || null,
+      website: createForm.website.trim() || null,
+      rbq: createForm.rbq.trim() || null,
+      approx_rev: createForm.approx_rev ? Number(createForm.approx_rev) : null,
+      employee_count: createForm.employee_count ? Number(createForm.employee_count) : null,
+    })
+    if (error) {
+      setCreateError(error.code === '23505' ? 'A lead with this phone number already exists.' : error.message)
+      setCreating(false)
+      return
+    }
+    setCreating(false)
+    setCreateForm(emptyForm)
+    setShowCreateModal(false)
+    fetchLeads()
+  }
 
   const filtered = leads.filter(lead => {
     const matchSearch =
@@ -65,7 +117,7 @@ export default function LeadsPage() {
         <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '4px 0 0' }}>{leads.length} total</p>
       </div>
 
-      {/* Filters */}
+      {/* Filters + Create button */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center' }}>
         <input
           type="text"
@@ -101,6 +153,22 @@ export default function LeadsPage() {
             <option key={s} value={s}>{STATUS_LABELS[s]}</option>
           ))}
         </select>
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={() => setShowCreateModal(true)}
+          style={{
+            background: 'var(--accent)',
+            color: '#000',
+            border: 'none',
+            borderRadius: 6,
+            padding: '8px 20px',
+            fontWeight: 600,
+            fontSize: 13,
+            cursor: 'pointer',
+          }}
+        >
+          + Create Lead
+        </button>
       </div>
 
       {/* Table */}
@@ -179,7 +247,157 @@ export default function LeadsPage() {
           lead={selectedLead}
           onClose={() => setSelectedLead(null)}
           onUpdate={fetchLeads}
+          onDelete={() => {
+            setSelectedLead(null)
+            fetchLeads()
+          }}
         />
+      )}
+
+      {/* Create Lead Modal */}
+      {showCreateModal && (
+        <>
+          <div
+            onClick={() => { setShowCreateModal(false); setCreateError('') }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40 }}
+          />
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 480,
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 10,
+            zIndex: 50,
+            padding: 28,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>Create Lead</h2>
+              <button
+                onClick={() => { setShowCreateModal(false); setCreateError('') }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 4 }}
+              >×</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Business Phone *
+                </label>
+                <input
+                  value={createForm.business_phone}
+                  onChange={e => setCreateForm(p => ({ ...p, business_phone: e.target.value }))}
+                  placeholder="e.g. 514-555-1234"
+                  style={{ ...inputStyle, marginTop: 4 }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Company Name *
+                </label>
+                <input
+                  value={createForm.company_name}
+                  onChange={e => setCreateForm(p => ({ ...p, company_name: e.target.value }))}
+                  placeholder="Company name"
+                  style={{ ...inputStyle, marginTop: 4 }}
+                />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Owner Name
+                  </label>
+                  <input
+                    value={createForm.owner_name}
+                    onChange={e => setCreateForm(p => ({ ...p, owner_name: e.target.value }))}
+                    style={{ ...inputStyle, marginTop: 4 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Owner Phone
+                  </label>
+                  <input
+                    value={createForm.owner_phone}
+                    onChange={e => setCreateForm(p => ({ ...p, owner_phone: e.target.value }))}
+                    style={{ ...inputStyle, marginTop: 4 }}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Website
+                  </label>
+                  <input
+                    value={createForm.website}
+                    onChange={e => setCreateForm(p => ({ ...p, website: e.target.value }))}
+                    style={{ ...inputStyle, marginTop: 4 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    RBQ
+                  </label>
+                  <input
+                    value={createForm.rbq}
+                    onChange={e => setCreateForm(p => ({ ...p, rbq: e.target.value }))}
+                    style={{ ...inputStyle, marginTop: 4 }}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Approx Revenue
+                  </label>
+                  <input
+                    type="number"
+                    value={createForm.approx_rev}
+                    onChange={e => setCreateForm(p => ({ ...p, approx_rev: e.target.value }))}
+                    style={{ ...inputStyle, marginTop: 4 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Employee Count
+                  </label>
+                  <input
+                    type="number"
+                    value={createForm.employee_count}
+                    onChange={e => setCreateForm(p => ({ ...p, employee_count: e.target.value }))}
+                    style={{ ...inputStyle, marginTop: 4 }}
+                  />
+                </div>
+              </div>
+
+              {createError && (
+                <div style={{ color: 'var(--danger)', fontSize: 13 }}>{createError}</div>
+              )}
+
+              <button
+                onClick={createLead}
+                disabled={creating || !createForm.business_phone.trim() || !createForm.company_name.trim()}
+                style={{
+                  marginTop: 4,
+                  background: 'var(--accent)',
+                  color: '#000',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '10px 20px',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  cursor: creating || !createForm.business_phone.trim() || !createForm.company_name.trim() ? 'not-allowed' : 'pointer',
+                  opacity: creating || !createForm.business_phone.trim() || !createForm.company_name.trim() ? 0.5 : 1,
+                }}
+              >
+                {creating ? 'Creating...' : 'Create Lead'}
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )
