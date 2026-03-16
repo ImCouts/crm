@@ -198,13 +198,13 @@ export default function PipelinePage() {
                         </span>
                       )}
                     </div>
-                    {lead.lead_status?.status_changed_at && (
+                    {(lead.lead_status?.status_changed_at || lead.created_at) && (
                       <span style={{
                         fontFamily: 'monospace',
                         fontSize: 10,
                         color: '#666',
                       }}>
-                        {Math.floor((Date.now() - new Date(lead.lead_status.status_changed_at).getTime()) / 86400000)}d
+                        {Math.floor((Date.now() - new Date(lead.lead_status?.status_changed_at ?? lead.created_at).getTime()) / 86400000)}d
                       </span>
                     )}
                   </div>

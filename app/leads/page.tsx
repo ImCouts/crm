@@ -90,6 +90,13 @@ export default function LeadsPage() {
       setCreating(false)
       return
     }
+    // Create lead_status row so aging starts immediately
+    await supabase.from('lead_status').insert({
+      business_phone: stripNonDigits(createForm.business_phone),
+      status: 'lead',
+      call_count: 0,
+      status_changed_at: new Date().toISOString(),
+    })
     setCreating(false)
     setCreateForm(emptyForm)
     setShowCreateModal(false)
