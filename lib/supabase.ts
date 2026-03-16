@@ -24,6 +24,7 @@ export type LeadStatus = {
   offer_amount: number | null
   last_called_at: string | null
   last_emailed_at: string | null
+  status_changed_at: string | null
 }
 
 export type CallLog = {

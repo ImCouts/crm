@@ -148,6 +148,7 @@ export default function LeadDrawer({
       status,
       call_count: lead.lead_status?.call_count ?? 0,
       offer_amount: lead.lead_status?.offer_amount ?? null,
+      status_changed_at: new Date().toISOString(),
     }, { onConflict: 'business_phone' })
     onUpdate()
   }
