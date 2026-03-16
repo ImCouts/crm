@@ -58,6 +58,7 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 | offer_amount   | numeric     | nullable — active offer amount in dollars (e.g. 5000) |
 | last_called_at | timestamptz |
 | last_emailed_at| timestamptz |
+| status_changed_at | timestamptz | default now() — set on insert and on every status change |
 
 > All table joins are on business_phone, not id. Never assume an id foreign key
 
@@ -112,7 +113,6 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 - Filter: all / overdue / completed
 
 ### Lead Detail Drawer
-- Offer amount field: numeric input (dollar amount) — editable inline, saved to lead_status.offer_amount — displayed as formatted currency (e.g. $5,000)
 - Shows all fields from leads + lead_status
 - Call log history for that lead (call_log ordered by called_at desc)
 - "Log a Call" form: note textarea + submit button
@@ -126,6 +126,7 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 - "Add Note" form: content textarea + submit button
 - On submit: INSERT into notes (business_phone, content)
 - Each note displays content + formatted created_at timestamp
+- Offer amount field: numeric input (dollar amount) — editable inline, saved to lead_status.offer_amount — displayed as formatted currency (e.g. $5,000)
 
 ### /pipeline (Kanban)
 - 6 columns: Lead → Discovery Call → Interested → Booked → Pending → Lost
@@ -138,6 +139,9 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
     using business_phone as the key, setting status to the new column value
  - Lead column drop sets status to 'lead'
  - Optimistic UI — move card instantly, sync in background
+ - On every status change (drag & drop or inline): UPSERT must also SET status_changed_at = now()
+ - Cards within each column are ordered by status_changed_at DESC
+ - Each card displays a small muted badge in the bottom-right corner — format: "10d" — calculated as floor(now() - status_changed_at) in days — monospace font, color #666 — hidden if status_changed_at is null
 
 ---
 
