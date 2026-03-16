@@ -55,6 +55,8 @@ export default function PipelinePage() {
     setOverCol(null)
     if (!dragId) return
 
+    const now = new Date().toISOString()
+
     // Optimistic update
     setLeads(prev =>
       prev.map(l => {
@@ -62,8 +64,9 @@ export default function PipelinePage() {
         return {
           ...l,
           lead_status: {
-            ...(l.lead_status ?? { business_phone: l.business_phone, call_count: 0, offer_amount: null, last_called_at: null, last_emailed_at: null }),
+            ...(l.lead_status ?? { business_phone: l.business_phone, call_count: 0, offer_amount: null, last_called_at: null, last_emailed_at: null, status_changed_at: null }),
             status: colKey as LeadStatus['status'],
+            status_changed_at: now,
           },
         }
       })
@@ -78,6 +81,8 @@ export default function PipelinePage() {
       status: colKey,
       call_count: lead.lead_status?.call_count ?? 0,
       last_called_at: lead.lead_status?.last_called_at ?? null,
+      offer_amount: lead.lead_status?.offer_amount ?? null,
+      status_changed_at: now,
     }, { onConflict: 'business_phone' })
   }
 
@@ -101,7 +106,13 @@ export default function PipelinePage() {
 
       <div style={{ display: 'flex', gap: 16, flex: 1, overflow: 'auto', alignItems: 'flex-start', paddingBottom: 16 }}>
         {COLUMNS.map(col => {
-          const cards = leads.filter(l => getStatus(l) === col.key)
+          const cards = leads
+            .filter(l => getStatus(l) === col.key)
+            .sort((a, b) => {
+              const aTime = a.lead_status?.status_changed_at ?? ''
+              const bTime = b.lead_status?.status_changed_at ?? ''
+              return aTime.localeCompare(bTime)
+            })
           const isDragOver = overCol === col.key
 
           return (
@@ -169,22 +180,34 @@ export default function PipelinePage() {
                   <div style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-muted)', marginTop: 4 }}>
                     {lead.owner_phone ?? lead.business_phone}
                   </div>
-                  {getStatus(lead) === 'pending' && lead.lead_status?.offer_amount != null && (
-                    <div style={{
-                      marginTop: 6,
-                      display: 'inline-block',
-                      fontFamily: 'monospace',
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: '#3ecf8e',
-                      background: 'rgba(62, 207, 142, 0.1)',
-                      border: '1px solid rgba(62, 207, 142, 0.25)',
-                      borderRadius: 4,
-                      padding: '2px 8px',
-                    }}>
-                      ${lead.lead_status.offer_amount.toLocaleString()}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 6 }}>
+                    <div>
+                      {getStatus(lead) === 'pending' && lead.lead_status?.offer_amount != null && (
+                        <span style={{
+                          display: 'inline-block',
+                          fontFamily: 'monospace',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: '#3ecf8e',
+                          background: 'rgba(62, 207, 142, 0.1)',
+                          border: '1px solid rgba(62, 207, 142, 0.25)',
+                          borderRadius: 4,
+                          padding: '2px 8px',
+                        }}>
+                          ${lead.lead_status.offer_amount.toLocaleString()}
+                        </span>
+                      )}
                     </div>
-                  )}
+                    {lead.lead_status?.status_changed_at && (
+                      <span style={{
+                        fontFamily: 'monospace',
+                        fontSize: 10,
+                        color: '#666',
+                      }}>
+                        {Math.floor((Date.now() - new Date(lead.lead_status.status_changed_at).getTime()) / 86400000)}d
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
 
