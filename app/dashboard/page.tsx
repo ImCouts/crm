@@ -7,6 +7,7 @@ type Stats = {
   totalLeads: number
   byStatus: Record<string, number>
   totalCalls: number
+  pendingPipeline: number
 }
 
 type RecentCall = CallLog & { leads: { company_name: string } | null }
@@ -16,6 +17,7 @@ const STATUS_LABELS: Record<string, string> = {
   discovery_call: 'Discovery Call',
   interested: 'Interested',
   booked: 'Booked',
+  pending: 'Pending',
   lost: 'Lost',
 }
 
@@ -24,6 +26,7 @@ const STATUS_COLORS: Record<string, string> = {
   discovery_call: '#60a5fa',
   interested: '#fbbf24',
   booked: '#3ecf8e',
+  pending: '#a78bfa',
   lost: '#f87171',
 }
 
@@ -34,7 +37,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function load() {
-      const [leadsRes, statusRes, callsRes, recentRes] = await Promise.all([
+      const [leadsRes, statusRes, callsRes, recentRes, pendingRes] = await Promise.all([
         supabase.from('leads').select('business_phone', { count: 'exact', head: true }),
         supabase.from('lead_status').select('status'),
         supabase.from('call_log').select('id', { count: 'exact', head: true }),
@@ -43,9 +46,10 @@ export default function DashboardPage() {
           .select('*, leads(company_name)')
           .order('called_at', { ascending: false })
           .limit(10),
+        supabase.from('lead_status').select('offer_amount').eq('status', 'pending'),
       ])
 
-      const byStatus: Record<string, number> = { lead: 0, discovery_call: 0, interested: 0, booked: 0, lost: 0 }
+      const byStatus: Record<string, number> = { lead: 0, discovery_call: 0, interested: 0, booked: 0, pending: 0, lost: 0 }
       if (statusRes.data) {
         for (const row of statusRes.data) {
           const s = row.status ?? 'lead'
@@ -57,10 +61,15 @@ export default function DashboardPage() {
         byStatus['lead'] = (byStatus['lead'] ?? 0) + (total - withStatus)
       }
 
+      const pendingPipeline = (pendingRes.data ?? []).reduce(
+        (sum, row) => sum + (row.offer_amount ?? 0), 0
+      )
+
       setStats({
         totalLeads: leadsRes.count ?? 0,
         byStatus,
         totalCalls: callsRes.count ?? 0,
+        pendingPipeline,
       })
       setRecentCalls((recentRes.data as RecentCall[]) ?? [])
       setLoading(false)
@@ -79,6 +88,30 @@ export default function DashboardPage() {
         <div style={{ color: 'var(--text-muted)', fontFamily: 'monospace' }}>Loading...</div>
       ) : (
         <>
+          {/* Pending Pipeline Capsule */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(62, 207, 142, 0.08), rgba(62, 207, 142, 0.02))',
+            border: '1px solid rgba(62, 207, 142, 0.3)',
+            borderRadius: 10,
+            padding: '20px 28px',
+            marginBottom: 24,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+                Pending Pipeline
+              </div>
+              <div style={{ fontSize: 32, fontWeight: 700, fontFamily: 'monospace', color: 'var(--accent)' }}>
+                ${(stats?.pendingPipeline ?? 0).toLocaleString()}
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+              Sum of all pending offers
+            </div>
+          </div>
+
           {/* Stat Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16, marginBottom: 40 }}>
             <StatCard label="Total Leads" value={stats?.totalLeads ?? 0} accent />

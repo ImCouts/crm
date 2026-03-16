@@ -19,8 +19,9 @@ export type Lead = {
 
 export type LeadStatus = {
   business_phone: string
-  status: 'lead' | 'discovery_call' | 'interested' | 'booked' | 'lost' | null
+  status: 'lead' | 'discovery_call' | 'interested' | 'booked' | 'pending' | 'lost' | null
   call_count: number | null
+  offer_amount: number | null
   last_called_at: string | null
   last_emailed_at: string | null
 }

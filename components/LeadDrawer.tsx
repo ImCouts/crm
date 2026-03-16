@@ -5,12 +5,13 @@ import { supabase, type Lead, type LeadStatus, type CallLog, type Task, type Not
 
 type LeadRow = Lead & { lead_status: LeadStatus | null }
 
-const STATUS_OPTIONS = ['lead', 'discovery_call', 'interested', 'booked', 'lost']
+const STATUS_OPTIONS = ['lead', 'discovery_call', 'interested', 'booked', 'pending', 'lost']
 const STATUS_LABELS: Record<string, string> = {
   lead: 'Lead',
   discovery_call: 'Discovery Call',
   interested: 'Interested',
   booked: 'Booked',
+  pending: 'Pending',
   lost: 'Lost',
 }
 
@@ -43,6 +44,7 @@ export default function LeadDrawer({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [activeStatus, setActiveStatus] = useState<string>(lead.lead_status?.status ?? 'lead')
+  const [offerAmount, setOfferAmount] = useState<string>(lead.lead_status?.offer_amount?.toString() ?? '')
   const overlayRef = useRef<HTMLDivElement>(null)
 
   const phone = lead.business_phone
@@ -145,6 +147,17 @@ export default function LeadDrawer({
       business_phone: phone,
       status,
       call_count: lead.lead_status?.call_count ?? 0,
+    }, { onConflict: 'business_phone' })
+    onUpdate()
+  }
+
+  async function saveOfferAmount() {
+    const amount = offerAmount.trim() === '' ? null : Number(offerAmount)
+    await supabase.from('lead_status').upsert({
+      business_phone: phone,
+      status: activeStatus,
+      call_count: lead.lead_status?.call_count ?? 0,
+      offer_amount: amount,
     }, { onConflict: 'business_phone' })
     onUpdate()
   }
@@ -287,6 +300,30 @@ export default function LeadDrawer({
                       </button>
                     )
                   })}
+                </div>
+              </div>
+
+              {/* Offer Amount */}
+              <div>
+                <Label>Offer Amount</Label>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: 13 }}>$</span>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={offerAmount}
+                      onChange={e => setOfferAmount(e.target.value)}
+                      onBlur={saveOfferAmount}
+                      onKeyDown={e => { if (e.key === 'Enter') saveOfferAmount() }}
+                      style={{ ...inputStyle, paddingLeft: 22 }}
+                    />
+                  </div>
+                  {offerAmount && (
+                    <span style={{ fontFamily: 'monospace', fontSize: 13, color: 'var(--accent)', fontWeight: 600 }}>
+                      ${Number(offerAmount).toLocaleString()}
+                    </span>
+                  )}
                 </div>
               </div>
 

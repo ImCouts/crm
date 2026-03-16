@@ -10,6 +10,7 @@ const COLUMNS: { key: string; label: string; color: string }[] = [
   { key: 'discovery_call', label: 'Discovery Call', color: '#60a5fa' },
   { key: 'interested', label: 'Interested', color: '#fbbf24' },
   { key: 'booked', label: 'Booked', color: '#3ecf8e' },
+  { key: 'pending', label: 'Pending', color: '#a78bfa' },
   { key: 'lost', label: 'Lost', color: '#f87171' },
 ]
 
@@ -61,7 +62,7 @@ export default function PipelinePage() {
         return {
           ...l,
           lead_status: {
-            ...(l.lead_status ?? { business_phone: l.business_phone, call_count: 0, last_called_at: null, last_emailed_at: null }),
+            ...(l.lead_status ?? { business_phone: l.business_phone, call_count: 0, offer_amount: null, last_called_at: null, last_emailed_at: null }),
             status: colKey as LeadStatus['status'],
           },
         }
@@ -168,6 +169,22 @@ export default function PipelinePage() {
                   <div style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-muted)', marginTop: 4 }}>
                     {lead.owner_phone ?? lead.business_phone}
                   </div>
+                  {getStatus(lead) === 'pending' && lead.lead_status?.offer_amount != null && (
+                    <div style={{
+                      marginTop: 6,
+                      display: 'inline-block',
+                      fontFamily: 'monospace',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: '#3ecf8e',
+                      background: 'rgba(62, 207, 142, 0.1)',
+                      border: '1px solid rgba(62, 207, 142, 0.25)',
+                      borderRadius: 4,
+                      padding: '2px 8px',
+                    }}>
+                      ${lead.lead_status.offer_amount.toLocaleString()}
+                    </div>
+                  )}
                 </div>
               ))}
 
