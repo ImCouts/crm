@@ -147,6 +147,7 @@ export default function LeadDrawer({
       business_phone: phone,
       status,
       call_count: lead.lead_status?.call_count ?? 0,
+      offer_amount: lead.lead_status?.offer_amount ?? null,
     }, { onConflict: 'business_phone' })
     onUpdate()
   }
