@@ -13,6 +13,7 @@ const STATUS_LABELS: Record<string, string> = {
   discovery_call: 'Discovery Call',
   interested: 'Interested',
   booked: 'Booked',
+  pending: 'Pending',
   lost: 'Lost',
 }
 const STATUS_COLORS: Record<string, string> = {
@@ -20,6 +21,7 @@ const STATUS_COLORS: Record<string, string> = {
   discovery_call: '#60a5fa',
   interested: '#fbbf24',
   booked: '#3ecf8e',
+  pending: '#a78bfa',
   lost: '#f87171',
 }
 
@@ -247,7 +249,15 @@ export default function LeadsPage() {
         <LeadDrawer
           lead={selectedLead}
           onClose={() => setSelectedLead(null)}
-          onUpdate={fetchLeads}
+          onUpdate={async () => {
+            const { data } = await supabase
+              .from('leads')
+              .select('*, lead_status(*)')
+              .order('created_at', { ascending: false })
+            const fresh = (data as LeadRow[]) ?? []
+            setLeads(fresh)
+            setSelectedLead(prev => prev ? fresh.find(l => l.business_phone === prev.business_phone) ?? null : null)
+          }}
           onDelete={() => {
             setSelectedLead(null)
             fetchLeads()
