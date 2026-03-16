@@ -140,7 +140,7 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
  - Lead column drop sets status to 'lead'
  - Optimistic UI — move card instantly, sync in background
  - On every status change (drag & drop or inline): UPSERT must also SET status_changed_at = now()
- - Cards within each column are ordered by status_changed_at DESC
+ - Cards within each column are ordered by status_changed_at ASC
  - Each card displays a small muted badge in the bottom-right corner — format: "10d" — calculated as floor(now() - status_changed_at) in days — monospace font, color #666 — hidden if status_changed_at is null
 
 ---
