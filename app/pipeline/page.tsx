@@ -104,7 +104,7 @@ export default function PipelinePage() {
         <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '4px 0 0' }}>Drag cards to update status</p>
       </div>
 
-      <div style={{ display: 'flex', gap: 16, flex: 1, overflow: 'auto', alignItems: 'flex-start', paddingBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 16, flex: 1, overflow: 'auto', alignItems: 'stretch', paddingBottom: 16 }}>
         {COLUMNS.map(col => {
           const cards = leads
             .filter(l => getStatus(l) === col.key)
@@ -116,6 +116,7 @@ export default function PipelinePage() {
           const isDragOver = overCol === col.key
 
           return (
+            /* Outer lane: full-height drop target */
             <div
               key={col.key}
               onDragOver={e => handleDragOver(e, col.key)}
@@ -124,98 +125,108 @@ export default function PipelinePage() {
               style={{
                 minWidth: 220,
                 width: 220,
-                background: isDragOver ? 'var(--bg-elevated)' : 'var(--bg-surface)',
-                border: `1px solid ${isDragOver ? col.color + '66' : 'var(--border)'}`,
-                borderRadius: 8,
-                padding: '14px 12px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 10,
-                transition: 'background 0.15s, border-color 0.15s',
-                minHeight: 200,
               }}
             >
-              {/* Column header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: col.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  {col.label}
-                </span>
-                <span style={{
-                  fontSize: 11,
-                  fontFamily: 'monospace',
-                  color: 'var(--text-muted)',
-                  background: 'var(--bg-elevated)',
-                  borderRadius: 4,
-                  padding: '1px 6px',
-                }}>
-                  {cards.length}
-                </span>
-              </div>
+              {/* Visible card container — natural height, no stretching */}
+              <div
+                style={{
+                  background: isDragOver ? 'var(--bg-elevated)' : 'var(--bg-surface)',
+                  border: `1px solid ${isDragOver ? col.color + '66' : 'var(--border)'}`,
+                  borderRadius: 8,
+                  padding: '14px 12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                  transition: 'background 0.15s, border-color 0.15s',
+                }}
+              >
+                {/* Column header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: col.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    {col.label}
+                  </span>
+                  <span style={{
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                    color: 'var(--text-muted)',
+                    background: 'var(--bg-elevated)',
+                    borderRadius: 4,
+                    padding: '1px 6px',
+                  }}>
+                    {cards.length}
+                  </span>
+                </div>
 
-              {/* Cards */}
-              {cards.map(lead => (
-                <div
-                  key={lead.business_phone}
-                  draggable
-                  onDragStart={e => handleDragStart(e, lead.business_phone)}
-                  onDragEnd={handleDragEnd}
-                  style={{
-                    background: dragId === lead.business_phone ? 'var(--bg-elevated)' : 'var(--bg-elevated)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 6,
-                    padding: '12px',
-                    cursor: 'grab',
-                    opacity: dragId === lead.business_phone ? 0.4 : 1,
-                    transition: 'opacity 0.15s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = col.color + '66')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-                >
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
-                    {lead.company_name}
-                  </div>
-                  {lead.owner_name && (
-                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{lead.owner_name}</div>
-                  )}
-                  <div style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-muted)', marginTop: 4 }}>
-                    {lead.owner_phone ?? lead.business_phone}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 6 }}>
-                    <div>
-                      {getStatus(lead) === 'pending' && lead.lead_status?.offer_amount != null && (
+                {/* Cards */}
+                {cards.map(lead => (
+                  <div
+                    key={lead.business_phone}
+                    draggable
+                    onDragStart={e => handleDragStart(e, lead.business_phone)}
+                    onDragEnd={handleDragEnd}
+                    style={{
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 6,
+                      padding: '12px',
+                      cursor: 'grab',
+                      opacity: dragId === lead.business_phone ? 0.4 : 1,
+                      transition: 'opacity 0.15s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = col.color + '66')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
+                      {lead.company_name}
+                    </div>
+                    {lead.owner_name && (
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{lead.owner_name}</div>
+                    )}
+                    <div style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-muted)', marginTop: 4 }}>
+                      {lead.owner_phone ?? lead.business_phone}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 6 }}>
+                      <div>
+                        {getStatus(lead) === 'pending' && lead.lead_status?.offer_amount != null && (
+                          <span style={{
+                            display: 'inline-block',
+                            fontFamily: 'monospace',
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: '#3ecf8e',
+                            background: 'rgba(62, 207, 142, 0.1)',
+                            border: '1px solid rgba(62, 207, 142, 0.25)',
+                            borderRadius: 4,
+                            padding: '2px 8px',
+                          }}>
+                            ${lead.lead_status.offer_amount.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                      {(lead.lead_status?.status_changed_at || lead.created_at) && (
                         <span style={{
-                          display: 'inline-block',
                           fontFamily: 'monospace',
-                          fontSize: 11,
-                          fontWeight: 600,
-                          color: '#3ecf8e',
-                          background: 'rgba(62, 207, 142, 0.1)',
-                          border: '1px solid rgba(62, 207, 142, 0.25)',
-                          borderRadius: 4,
-                          padding: '2px 8px',
+                          fontSize: 10,
+                          color: '#666',
                         }}>
-                          ${lead.lead_status.offer_amount.toLocaleString()}
+                          {Math.floor((Date.now() - new Date(lead.lead_status?.status_changed_at ?? lead.created_at).getTime()) / 86400000)}d
                         </span>
                       )}
                     </div>
-                    {(lead.lead_status?.status_changed_at || lead.created_at) && (
-                      <span style={{
-                        fontFamily: 'monospace',
-                        fontSize: 10,
-                        color: '#666',
-                      }}>
-                        {Math.floor((Date.now() - new Date(lead.lead_status?.status_changed_at ?? lead.created_at).getTime()) / 86400000)}d
-                      </span>
-                    )}
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {cards.length === 0 && (
-                <div style={{ color: 'var(--text-muted)', fontSize: 12, textAlign: 'center', padding: '16px 0', fontStyle: 'italic' }}>
-                  Drop here
-                </div>
-              )}
+                {cards.length === 0 && (
+                  <div style={{ color: 'var(--text-muted)', fontSize: 12, textAlign: 'center', padding: '16px 0', fontStyle: 'italic' }}>
+                    Drop here
+                  </div>
+                )}
+              </div>
+
+              {/* Invisible spacer — extends the drop zone to fill remaining viewport height */}
+              <div style={{ flex: 1 }} />
             </div>
           )
         })}

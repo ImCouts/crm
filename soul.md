@@ -143,6 +143,9 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
  - On every status change (drag & drop or inline): UPSERT must also SET status_changed_at = now()
  - Cards within each column are ordered by status_changed_at ASC
  - Each card displays a small muted badge in the bottom-right corner — format: "10d" — calculated as floor(now() - status_changed_at) in days — monospace font, color #666 — hidden if status_changed_at is null
+ - Each column's visible card container should only be as tall as its cards (no giant empty box stretching down — remove any min-height or fixed height on the cards container)
+ - BUT each column must still be droppable even when scrolled out of view or empty. Do this by making the entire column element (full height of the page) the dragover/drop event target — not just the cards container. The invisible hit zone should be the full column div spanning 100% height, while the cards just stack naturally inside it at their natural height
+ - The drag behavior should work anywhere vertically within the column's lane.
 
 ---
 
