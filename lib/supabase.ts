@@ -13,6 +13,7 @@ export type Lead = {
   owner_name: string | null
   owner_phone: string | null
   approx_rev: number | null
+  industry: string | null
   employee_count: number | null
   created_at: string
 }

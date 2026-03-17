@@ -333,6 +333,10 @@ export default function LeadDrawer({
                 <EditField label="Company Name" value={fieldVal('company_name') as string | null} onChange={v => setEditFields(p => ({ ...p, company_name: v }))} />
               </div>
 
+              <div>
+                <EditField label="Industry" value={fieldVal('industry') as string | null} onChange={v => setEditFields(p => ({ ...p, industry: v }))} />
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <EditField label="Owner Name" value={fieldVal('owner_name') as string | null} onChange={v => setEditFields(p => ({ ...p, owner_name: v }))} />
                 <EditField label="Owner Phone" value={fieldVal('owner_phone') as string | null} onChange={v => setEditFields(p => ({ ...p, owner_phone: v }))} />

@@ -37,6 +37,7 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 | owner_name     | text        |
 | owner_phone    | text        |
 | approx_rev     | numeric     |
+| industry       | text        |
 | employee_count | int4        |
 | created_at     | timestamptz |
 
@@ -99,9 +100,9 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 ### /leads (main table view)
 - Full table of all leads from Supabase
 - Columns: company_name, owner_name, business_phone, approx_rev, 
-  employee_count, status (from lead_status), last_called_at, call_count
+  industry, employee_count, status (from lead_status), last_called_at, call_count
 - Click a row → opens a slide-in drawer (no page navigation)
-- Search bar: filter by company_name or business_phone
+- Search bar: filter by company_name, business_phone, or industry
 - Filter dropdown: filter by status
 
 ### /tasks

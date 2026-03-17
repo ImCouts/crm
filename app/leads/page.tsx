@@ -34,6 +34,7 @@ const emptyForm = {
   rbq: '',
   approx_rev: '',
   employee_count: '',
+  industry: '',
 }
 
 const inputStyle: React.CSSProperties = {
@@ -84,6 +85,7 @@ export default function LeadsPage() {
       rbq: stripNonDigits(createForm.rbq) || null,
       approx_rev: createForm.approx_rev ? Number(createForm.approx_rev) : null,
       employee_count: createForm.employee_count ? Number(createForm.employee_count) : null,
+      industry: createForm.industry.trim() || null,
     })
     if (error) {
       setCreateError(error.code === '23505' ? 'A lead with this phone number already exists.' : error.message)
@@ -104,10 +106,12 @@ export default function LeadsPage() {
   }
 
   const filtered = leads.filter(lead => {
+    const q = search.toLowerCase()
     const matchSearch =
       !search ||
-      lead.company_name?.toLowerCase().includes(search.toLowerCase()) ||
-      lead.business_phone?.includes(search)
+      lead.company_name?.toLowerCase().includes(q) ||
+      lead.business_phone?.includes(search) ||
+      lead.industry?.toLowerCase().includes(q)
     const effectiveStatus = lead.lead_status?.status ?? 'lead'
     const matchStatus = statusFilter === 'all' || effectiveStatus === statusFilter
     return matchSearch && matchStatus
@@ -131,7 +135,7 @@ export default function LeadsPage() {
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center' }}>
         <input
           type="text"
-          placeholder="Search by company or phone..."
+          placeholder="Search by company, phone, or industry..."
           value={search}
           onChange={e => setSearch(e.target.value)}
           style={{
@@ -189,7 +193,7 @@ export default function LeadsPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['Company', 'Owner', 'Phone', 'Revenue', 'Employees', 'Status', 'Last Called', 'Calls'].map(h => (
+                {['Company', 'Owner', 'Phone', 'Revenue', 'Industry', 'Employees', 'Status', 'Last Called', 'Calls'].map(h => (
                   <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
                     {h}
                   </th>
@@ -199,7 +203,7 @@ export default function LeadsPage() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={9} style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
                     No leads found.
                   </td>
                 </tr>
@@ -221,6 +225,7 @@ export default function LeadsPage() {
                     <td style={{ padding: '10px 16px', color: 'var(--text-secondary)' }}>{lead.owner_name ?? '—'}</td>
                     <td style={{ padding: '10px 16px', color: 'var(--text-secondary)', fontFamily: 'monospace', fontSize: 12 }}>{lead.business_phone}</td>
                     <td style={{ padding: '10px 16px', color: 'var(--text-secondary)', fontFamily: 'monospace', fontSize: 12 }}>{formatRev(lead.approx_rev)}</td>
+                    <td style={{ padding: '10px 16px', color: 'var(--text-secondary)', fontSize: 12 }}>{lead.industry ?? '—'}</td>
                     <td style={{ padding: '10px 16px', color: 'var(--text-secondary)', fontFamily: 'monospace', fontSize: 12, textAlign: 'center' }}>{lead.employee_count ?? '—'}</td>
                     <td style={{ padding: '10px 16px' }}>
                       <span style={{
@@ -389,6 +394,17 @@ export default function LeadsPage() {
                     style={{ ...inputStyle, marginTop: 4 }}
                   />
                 </div>
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Industry
+                </label>
+                <input
+                  value={createForm.industry}
+                  onChange={e => setCreateForm(p => ({ ...p, industry: e.target.value }))}
+                  placeholder="e.g. Construction, Plumbing..."
+                  style={{ ...inputStyle, marginTop: 4 }}
+                />
               </div>
 
               {createError && (
