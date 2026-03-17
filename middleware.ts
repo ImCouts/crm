@@ -6,7 +6,7 @@ import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
   const auth = request.headers.get('authorization')
-  const validAuth = 'Basic ' + btoa('admin:yourpassword')
+  const validAuth = 'Basic ' + btoa('couts:Jacky8826!')
 
   if (auth !== validAuth) {
     return new NextResponse('Unauthorized', {
