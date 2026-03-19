@@ -6,10 +6,11 @@ import LeadDrawer from '@/components/LeadDrawer'
 
 type LeadRow = Lead & { lead_status: LeadStatus | null }
 
-const STATUS_OPTIONS = ['all', 'lead', 'discovery_call', 'interested', 'booked', 'lost']
+const STATUS_OPTIONS = ['all', 'lead', 'no_answer', 'discovery_call', 'interested', 'booked', 'pending', 'lost']
 const STATUS_LABELS: Record<string, string> = {
   all: 'All',
   lead: 'Lead',
+  no_answer: 'No Answer',
   discovery_call: 'Discovery Call',
   interested: 'Interested',
   booked: 'Booked',
@@ -17,7 +18,8 @@ const STATUS_LABELS: Record<string, string> = {
   lost: 'Lost',
 }
 const STATUS_COLORS: Record<string, string> = {
-  lead: '#888',
+  lead: '#7D5638',
+  no_answer: '#807e7c',
   discovery_call: '#60a5fa',
   interested: '#fbbf24',
   booked: '#3ecf8e',

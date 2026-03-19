@@ -6,7 +6,8 @@ import { supabase, type Lead, type LeadStatus } from '@/lib/supabase'
 type LeadCard = Lead & { lead_status: LeadStatus | null }
 
 const COLUMNS: { key: string; label: string; color: string }[] = [
-  { key: 'lead', label: 'Lead', color: '#888' },
+  { key: 'lead', label: 'Lead', color: '#7D5638' },
+  { key: 'no_answer', label: 'No Answer', color: '#807e7c' },
   { key: 'discovery_call', label: 'Discovery Call', color: '#60a5fa' },
   { key: 'interested', label: 'Interested', color: '#fbbf24' },
   { key: 'booked', label: 'Booked', color: '#3ecf8e' },
@@ -104,7 +105,7 @@ export default function PipelinePage() {
         <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '4px 0 0' }}>Drag cards to update status</p>
       </div>
 
-      <div style={{ display: 'flex', gap: 16, flex: 1, overflow: 'auto', alignItems: 'stretch', paddingBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 13, flex: 1, overflow: 'auto', alignItems: 'stretch', paddingBottom: 16 }}>
         {COLUMNS.map(col => {
           const cards = leads
             .filter(l => getStatus(l) === col.key)

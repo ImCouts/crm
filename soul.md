@@ -54,7 +54,7 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 | column         | type        |
 |----------------|-------------|
 | business_phone | text (PK, FK → leads) |
-| status         | text | Values: 'lead', 'discovery_call', 'interested', 'booked', 'pending', 'lost' -- Null = 'lead' |
+| status         | text | Values: 'lead', 'no_answer', 'discovery_call', 'interested', 'booked', 'pending', 'lost' -- Null = 'lead' |
 | call_count     | int4        |
 | offer_amount   | numeric     | nullable — active offer amount in dollars (e.g. 5000) |
 | last_called_at | timestamptz |
@@ -130,7 +130,7 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 - Offer amount field: numeric input (dollar amount) — editable inline, saved to lead_status.offer_amount — displayed as formatted currency (e.g. $5,000)
 
 ### /pipeline (Kanban)
-- 6 columns: Lead → Discovery Call → Interested → Booked → Pending → Lost
+- 7 columns: Lead → No Answer → Discovery Call → Interested → Booked → Pending → Lost
 - Cards in the Pending column display the offer_amount if set (e.g. $5,000) as a monospace badge on the card
 - on load: fetch all leads joined with lead_status, place each card in column matching status
 - place each card in column matching status (null = 'lead')

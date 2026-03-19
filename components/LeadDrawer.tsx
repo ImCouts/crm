@@ -5,9 +5,10 @@ import { supabase, type Lead, type LeadStatus, type CallLog, type Task, type Not
 
 type LeadRow = Lead & { lead_status: LeadStatus | null }
 
-const STATUS_OPTIONS = ['lead', 'discovery_call', 'interested', 'booked', 'pending', 'lost']
+const STATUS_OPTIONS = ['lead', 'no_answer', 'discovery_call', 'interested', 'booked', 'pending', 'lost']
 const STATUS_LABELS: Record<string, string> = {
   lead: 'Lead',
+  no_answer: 'No Answer',
   discovery_call: 'Discovery Call',
   interested: 'Interested',
   booked: 'Booked',

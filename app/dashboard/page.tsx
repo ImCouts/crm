@@ -14,6 +14,7 @@ type RecentCall = CallLog & { leads: { company_name: string } | null }
 
 const STATUS_LABELS: Record<string, string> = {
   lead: 'Lead',
+  no_answer: 'No Answer',
   discovery_call: 'Discovery Call',
   interested: 'Interested',
   booked: 'Booked',
@@ -22,7 +23,8 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  lead: '#888',
+  lead: '#7D5638',
+  no_answer: '#807e7c',
   discovery_call: '#60a5fa',
   interested: '#fbbf24',
   booked: '#3ecf8e',
@@ -49,7 +51,7 @@ export default function DashboardPage() {
         supabase.from('lead_status').select('offer_amount').eq('status', 'pending'),
       ])
 
-      const byStatus: Record<string, number> = { lead: 0, discovery_call: 0, interested: 0, booked: 0, pending: 0, lost: 0 }
+      const byStatus: Record<string, number> = { lead: 0, no_answer: 0, discovery_call: 0, interested: 0, booked: 0, pending: 0, lost: 0 }
       if (statusRes.data) {
         for (const row of statusRes.data) {
           const s = row.status ?? 'lead'
