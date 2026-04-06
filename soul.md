@@ -116,6 +116,7 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 - Click a row → opens a slide-in drawer (no page navigation)
 - Search bar: filter by company_name, business_phone, or industry
 - Filter dropdown: filter by status
+- "Create Lead" modal fields: business_phone, company_name, owner_name, owner_phone, email, website, rbq, approx_rev, employee_count, industry
 
 ### /tasks
 - Full list of all tasks across all leads
@@ -125,9 +126,14 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 - Create new task from this page (not tied to a lead)
 - Filter: all / overdue / completed
 
+### Phone number formatting
+- owner_phone (create lead modal + drawer overview edit) and contacts.phone (add/edit) auto-format to (xxx) xxx-xxxx as the user types
+- Strips non-digits, handles leading country code 1, caps at 10 digits
+- Stored in DB already formatted as (xxx) xxx-xxxx
+
 ### Lead Detail Drawer
 - Shows all fields from leads + lead_status
-- Email field: text input — editable inline, saved to leads.email
+- Email field: text input — editable inline, saved to leads.email (also collected at lead creation time)
 - Call log history for that lead (call_log ordered by called_at desc)
 - "Log a Call" form: note textarea + submit button
 - On submit: INSERT into call_log, INCREMENT call_count, UPDATE last_called_at in lead_status
