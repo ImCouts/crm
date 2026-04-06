@@ -145,6 +145,14 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
  - Each column's visible card container should only be as tall as its cards (no giant empty box stretching down — remove any min-height or fixed height on the cards container)
  - BUT each column must still be droppable even when scrolled out of view or empty. Do this by making the entire column element (full height of the page) the dragover/drop event target — not just the cards container. The invisible hit zone should be the full column div spanning 100% height, while the cards just stack naturally inside it at their natural height
  - The drag behavior should work anywhere vertically within the column's lane.
+ - "Log a Call" button — positioned top-right of the pipeline page, next to the page title
+   - On click: opens a modal/popup form with:
+     - A searchable dropdown to select a lead (displays company_name, searches by company_name or business_phone)
+     - A note textarea
+     - A submit button
+   - On submit: INSERT into call_log (business_phone, called_at = now(), note), INCREMENT call_count and UPDATE last_called_at in lead_status for the selected lead
+   - Close modal on successful submit
+   - Same logic as the "Log a Call" form in the Lead Detail Drawer, but with an added lead selector
 
 ---
 
