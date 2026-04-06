@@ -38,6 +38,7 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 | approx_rev     | numeric     |
 | industry       | text        |
 | employee_count | int4        |
+| email          | text        |
 | created_at     | timestamptz |
 
 ### call_log
@@ -82,6 +83,17 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 | content        | text        | not null                                     |
 | created_at     | timestamptz | default now()                                |
 
+### contacts
+| column         | type        | notes                                        |
+|----------------|-------------|----------------------------------------------|
+| id             | uuid        | Primary Key, default gen_random_uuid()       |
+| business_phone | text        | FK → leads.business_phone, on update cascade on delete cascade |
+| name           | text        | nullable                                     |
+| phone          | text        | nullable                                     |
+| email          | text        | nullable                                     |
+| role           | text        | nullable                                     |
+| created_at     | timestamptz | default now()                                |
+
 ---
 
 ## Auth
@@ -115,10 +127,17 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 
 ### Lead Detail Drawer
 - Shows all fields from leads + lead_status
+- Email field: text input — editable inline, saved to leads.email
 - Call log history for that lead (call_log ordered by called_at desc)
 - "Log a Call" form: note textarea + submit button
 - On submit: INSERT into call_log, INCREMENT call_count, UPDATE last_called_at in lead_status
 - Inline editing of lead fields with save button
+- Contacts tab (positioned between Overview and Calls):
+  - Lists all contacts for this lead (from contacts table, ordered by created_at asc)
+  - Each contact displays: name, phone, email, role — all fields optional
+  - "Add Contact" button: opens inline form with fields for name, phone, email, role — submit inserts into contacts table with this lead's business_phone
+  - Each contact row has a small edit button (pencil icon) to inline-edit fields and a small delete button (x icon) to DELETE from contacts by id
+  - Use case: sub-owners, persons of interest, secondary contacts — stored structured data instead of burying it in notes
 - Tasks tab: shows tasks linked to this lead (ordered by due_at asc)
 - "Add Task" form: title, description, due_at
 - Overdue tasks highlighted in red

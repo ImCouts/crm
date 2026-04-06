@@ -53,6 +53,16 @@ export type Note = {
   created_at: string
 }
 
+export type Contact = {
+  id: string
+  business_phone: string
+  name: string | null
+  phone: string | null
+  email: string | null
+  role: string | null
+  created_at: string
+}
+
 export type LeadWithStatus = Lead & {
   lead_status: LeadStatus | null
 }

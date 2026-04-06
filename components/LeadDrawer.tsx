@@ -1,9 +1,19 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { supabase, type Lead, type LeadStatus, type CallLog, type Task, type Note } from '@/lib/supabase'
+import { supabase, type Lead, type LeadStatus, type CallLog, type Task, type Note, type Contact } from '@/lib/supabase'
 
 type LeadRow = Lead & { lead_status: LeadStatus | null }
+
+function formatPhone(raw: string): string {
+  let digits = raw.replace(/\D/g, '')
+  if (digits.length === 11 && digits[0] === '1') digits = digits.slice(1)
+  digits = digits.slice(0, 10)
+  if (digits.length === 0) return ''
+  if (digits.length <= 3) return `(${digits}`
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+}
 
 const STATUS_OPTIONS = ['lead', 'no_answer', 'discovery_call', 'interested', 'booked', 'pending', 'lost']
 const STATUS_LABELS: Record<string, string> = {
@@ -16,7 +26,7 @@ const STATUS_LABELS: Record<string, string> = {
   lost: 'Lost',
 }
 
-type Tab = 'overview' | 'calls' | 'tasks' | 'notes'
+type Tab = 'overview' | 'contacts' | 'calls' | 'tasks' | 'notes'
 
 function localNow() {
   const d = new Date()
@@ -51,6 +61,12 @@ export default function LeadDrawer({
   const [deleting, setDeleting] = useState(false)
   const [activeStatus, setActiveStatus] = useState<string>(lead.lead_status?.status ?? 'lead')
   const [offerAmount, setOfferAmount] = useState<string>(lead.lead_status?.offer_amount?.toString() ?? '')
+  const [contacts, setContacts] = useState<Contact[]>([])
+  const [showAddContact, setShowAddContact] = useState(false)
+  const [newContact, setNewContact] = useState({ name: '', phone: '', email: '', role: '' })
+  const [savingContact, setSavingContact] = useState(false)
+  const [editingContactId, setEditingContactId] = useState<string | null>(null)
+  const [editContactFields, setEditContactFields] = useState<{ name: string; phone: string; email: string; role: string }>({ name: '', phone: '', email: '', role: '' })
   const overlayRef = useRef<HTMLDivElement>(null)
 
   const phone = lead.business_phone
@@ -59,6 +75,7 @@ export default function LeadDrawer({
     fetchCallLogs()
     fetchTasks()
     fetchNotes()
+    fetchContacts()
   }, [phone])
 
   async function deleteCall(id: string) {
@@ -91,6 +108,47 @@ export default function LeadDrawer({
   async function deleteNote(id: string) {
     await supabase.from('notes').delete().eq('id', id)
     fetchNotes()
+  }
+
+  async function fetchContacts() {
+    const { data } = await supabase
+      .from('contacts')
+      .select('*')
+      .eq('business_phone', phone)
+      .order('created_at', { ascending: true })
+    setContacts(data ?? [])
+  }
+
+  async function addContact() {
+    const payload = {
+      business_phone: phone,
+      name: newContact.name.trim() || null,
+      phone: newContact.phone.trim() || null,
+      email: newContact.email.trim() || null,
+      role: newContact.role.trim() || null,
+    }
+    setSavingContact(true)
+    await supabase.from('contacts').insert(payload)
+    setNewContact({ name: '', phone: '', email: '', role: '' })
+    setShowAddContact(false)
+    setSavingContact(false)
+    fetchContacts()
+  }
+
+  async function saveEditContact(id: string) {
+    await supabase.from('contacts').update({
+      name: editContactFields.name.trim() || null,
+      phone: editContactFields.phone.trim() || null,
+      email: editContactFields.email.trim() || null,
+      role: editContactFields.role.trim() || null,
+    }).eq('id', id)
+    setEditingContactId(null)
+    fetchContacts()
+  }
+
+  async function deleteContact(id: string) {
+    await supabase.from('contacts').delete().eq('id', id)
+    fetchContacts()
   }
 
   async function fetchCallLogs() {
@@ -253,7 +311,7 @@ export default function LeadDrawer({
 
         {/* Tabs */}
         <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', padding: '0 24px' }}>
-          {(['overview', 'calls', 'tasks', 'notes'] as Tab[]).map(t => (
+          {(['overview', 'contacts', 'calls', 'tasks', 'notes'] as Tab[]).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -355,7 +413,7 @@ export default function LeadDrawer({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <EditField label="Owner Name" value={fieldVal('owner_name') as string | null} onChange={v => setEditFields(p => ({ ...p, owner_name: v }))} />
-                <EditField label="Owner Phone" value={fieldVal('owner_phone') as string | null} onChange={v => setEditFields(p => ({ ...p, owner_phone: v }))} />
+                <EditField label="Owner Phone" value={fieldVal('owner_phone') as string | null} onChange={v => setEditFields(p => ({ ...p, owner_phone: formatPhone(v) }))} placeholder="(xxx) xxx-xxxx" mono />
                 <EditField label="Website" value={fieldVal('website') as string | null} onChange={v => setEditFields(p => ({ ...p, website: v }))} />
                 <EditField label="RBQ" value={fieldVal('rbq') as string | null} onChange={v => setEditFields(p => ({ ...p, rbq: v }))} />
                 <EditField label="Approx Revenue" value={fieldVal('approx_rev') as string | null} onChange={v => setEditFields(p => ({ ...p, approx_rev: v ? Number(v) : null }))} type="number" />
@@ -449,6 +507,262 @@ export default function LeadDrawer({
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* CONTACTS TAB */}
+          {tab === 'contacts' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Header row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Label>Contacts</Label>
+                {!showAddContact && (
+                  <button
+                    onClick={() => setShowAddContact(true)}
+                    style={{
+                      background: 'var(--accent)',
+                      color: '#000',
+                      border: 'none',
+                      borderRadius: 5,
+                      padding: '5px 14px',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    + Add Contact
+                  </button>
+                )}
+              </div>
+
+              {/* Add contact form */}
+              {showAddContact && (
+                <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: 16, border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                    <input
+                      placeholder="Name"
+                      value={newContact.name}
+                      onChange={e => setNewContact(p => ({ ...p, name: e.target.value }))}
+                      style={inputStyle}
+                    />
+                    <input
+                      placeholder="Role"
+                      value={newContact.role}
+                      onChange={e => setNewContact(p => ({ ...p, role: e.target.value }))}
+                      style={inputStyle}
+                    />
+                    <input
+                      placeholder="(xxx) xxx-xxxx"
+                      value={newContact.phone}
+                      onChange={e => setNewContact(p => ({ ...p, phone: formatPhone(e.target.value) }))}
+                      style={{ ...inputStyle, fontFamily: 'monospace' }}
+                    />
+                    <input
+                      placeholder="Email"
+                      value={newContact.email}
+                      onChange={e => setNewContact(p => ({ ...p, email: e.target.value }))}
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={addContact}
+                      disabled={savingContact}
+                      style={{
+                        background: 'var(--accent)',
+                        color: '#000',
+                        border: 'none',
+                        borderRadius: 5,
+                        padding: '7px 18px',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: savingContact ? 'not-allowed' : 'pointer',
+                        opacity: savingContact ? 0.6 : 1,
+                      }}
+                    >
+                      {savingContact ? 'Saving...' : 'Add'}
+                    </button>
+                    <button
+                      onClick={() => { setShowAddContact(false); setNewContact({ name: '', phone: '', email: '', role: '' }) }}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid var(--border)',
+                        borderRadius: 5,
+                        padding: '7px 18px',
+                        fontSize: 13,
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Contact list */}
+              {contacts.length === 0 && !showAddContact ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>No contacts yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {contacts.map(c => (
+                    <div
+                      key={c.id}
+                      style={{
+                        background: 'var(--bg-elevated)',
+                        borderRadius: 6,
+                        padding: '12px 14px',
+                        border: '1px solid var(--border-subtle)',
+                      }}
+                    >
+                      {editingContactId === c.id ? (
+                        /* Inline edit mode */
+                        <div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                            <input
+                              placeholder="Name"
+                              value={editContactFields.name}
+                              onChange={e => setEditContactFields(p => ({ ...p, name: e.target.value }))}
+                              style={inputStyle}
+                            />
+                            <input
+                              placeholder="Role"
+                              value={editContactFields.role}
+                              onChange={e => setEditContactFields(p => ({ ...p, role: e.target.value }))}
+                              style={inputStyle}
+                            />
+                            <input
+                              placeholder="(xxx) xxx-xxxx"
+                              value={editContactFields.phone}
+                              onChange={e => setEditContactFields(p => ({ ...p, phone: formatPhone(e.target.value) }))}
+                              style={{ ...inputStyle, fontFamily: 'monospace' }}
+                            />
+                            <input
+                              placeholder="Email"
+                              value={editContactFields.email}
+                              onChange={e => setEditContactFields(p => ({ ...p, email: e.target.value }))}
+                              style={inputStyle}
+                            />
+                          </div>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button
+                              onClick={() => saveEditContact(c.id)}
+                              style={{
+                                background: 'var(--accent)',
+                                color: '#000',
+                                border: 'none',
+                                borderRadius: 5,
+                                padding: '5px 14px',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingContactId(null)}
+                              style={{
+                                background: 'transparent',
+                                border: '1px solid var(--border)',
+                                borderRadius: 5,
+                                padding: '5px 14px',
+                                fontSize: 12,
+                                color: 'var(--text-secondary)',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Display mode */
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                              {c.name && (
+                                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</span>
+                              )}
+                              {c.role && (
+                                <span style={{
+                                  fontSize: 11,
+                                  color: 'var(--text-muted)',
+                                  background: 'var(--bg-surface)',
+                                  border: '1px solid var(--border-subtle)',
+                                  borderRadius: 4,
+                                  padding: '1px 7px',
+                                  fontFamily: 'monospace',
+                                }}>
+                                  {c.role}
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                              {c.phone && (
+                                <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{c.phone}</span>
+                              )}
+                              {c.email && (
+                                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.email}</span>
+                              )}
+                              {!c.name && !c.phone && !c.email && !c.role && (
+                                <span style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>No details</span>
+                              )}
+                            </div>
+                          </div>
+                          {/* Action buttons */}
+                          <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                            <button
+                              onClick={() => {
+                                setEditingContactId(c.id)
+                                setEditContactFields({
+                                  name: c.name ?? '',
+                                  phone: c.phone ?? '',
+                                  email: c.email ?? '',
+                                  role: c.role ?? '',
+                                })
+                              }}
+                              title="Edit contact"
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--text-muted)',
+                                cursor: 'pointer',
+                                fontSize: 13,
+                                padding: '2px 6px',
+                                borderRadius: 4,
+                                lineHeight: 1,
+                              }}
+                              onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
+                              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+                            >
+                              ✎
+                            </button>
+                            <button
+                              onClick={() => deleteContact(c.id)}
+                              title="Delete contact"
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--text-muted)',
+                                cursor: 'pointer',
+                                fontSize: 16,
+                                padding: '2px 6px',
+                                borderRadius: 4,
+                                lineHeight: 1,
+                              }}
+                              onMouseEnter={e => (e.currentTarget.style.color = 'var(--danger)')}
+                              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -771,11 +1085,15 @@ function EditField({
   value,
   onChange,
   type = 'text',
+  placeholder,
+  mono,
 }: {
   label: string
   value: string | number | null
   onChange: (v: string) => void
   type?: string
+  placeholder?: string
+  mono?: boolean
 }) {
   return (
     <div>
@@ -784,7 +1102,8 @@ function EditField({
         type={type}
         value={value ?? ''}
         onChange={e => onChange(e.target.value)}
-        style={{ ...inputStyle, marginTop: 4 }}
+        placeholder={placeholder}
+        style={{ ...inputStyle, marginTop: 4, ...(mono ? { fontFamily: 'monospace' } : {}) }}
       />
     </div>
   )
