@@ -100,6 +100,10 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 - None — solo project, no authentication required
 - App loads directly into /dashboard
 
+## Sidebar
+- Nav items (above separator): Dashboard, Leads, Pipeline, Tasks
+- Dark separator line divides the main nav from a future section below it
+
 ## Pages & Features
 
 ### /dashboard
