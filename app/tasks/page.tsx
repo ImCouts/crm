@@ -6,11 +6,16 @@ import { supabase, type Task, type Lead } from '@/lib/supabase'
 type TaskRow = Task & { leads: Pick<Lead, 'company_name'> | null }
 type Filter = 'all' | 'overdue' | 'completed'
 
+function localNow() {
+  const d = new Date()
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+}
+
 export default function TasksPage() {
   const [tasks, setTasks] = useState<TaskRow[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<Filter>('all')
-  const [newTask, setNewTask] = useState({ title: '', description: '', due_at: '' })
+  const [newTask, setNewTask] = useState({ title: '', description: '', due_at: localNow() })
   const [adding, setAdding] = useState(false)
   const [showForm, setShowForm] = useState(false)
 
@@ -52,7 +57,7 @@ export default function TasksPage() {
       completed: false,
       business_phone: null,
     })
-    setNewTask({ title: '', description: '', due_at: '' })
+    setNewTask({ title: '', description: '', due_at: localNow() })
     setAdding(false)
     setShowForm(false)
     fetchTasks()
@@ -104,7 +109,7 @@ export default function TasksPage() {
               type="datetime-local"
               value={newTask.due_at}
               onChange={e => setNewTask(p => ({ ...p, due_at: e.target.value }))}
-              style={inputStyle}
+              style={{ ...inputStyle, fontFamily: 'monospace', colorScheme: 'dark' }}
             />
             <div style={{ display: 'flex', gap: 8 }}>
               <button
