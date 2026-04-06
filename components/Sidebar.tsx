@@ -68,6 +68,10 @@ export default function Sidebar() {
         })}
       </nav>
 
+      <div style={{ padding: '8px 20px' }}>
+        <div style={{ borderTop: '1px solid var(--border)' }} />
+      </div>
+
       <div style={{ marginTop: 'auto', padding: '16px 20px', borderTop: '1px solid var(--border-subtle)' }}>
         <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' }}>v0.1.0</span>
       </div>
