@@ -1,4 +1,3 @@
-
 # CRM — Claude Code Brief
 
 ## Goal
@@ -136,7 +135,7 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 - place each card in column matching status (null = 'lead')
 - Cards show: company_name, owner_name, owner_phone (if owner_phone == null: show business_phone)
 - Drag and drop using native HTML drag and drop API — no library
-- On card drop: UPSERT into lead_status (INSERT if no row exists, UPDATE if it does)
+- On card drop: first compare the destination column to the card's current status — if they are the same, cancel the drop (no API call, no status_changed_at reset, no re-render). Only if the destination column is different: UPSERT into lead_status (INSERT if no row exists, UPDATE if it does)
     using business_phone as the key, setting status to the new column value
  - Lead column drop sets status to 'lead'
  - Optimistic UI — move card instantly, sync in background
@@ -159,4 +158,3 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_hfieou-uSd1obrj0ZvJryw_QFSpiXt7
 
 ## Deployment
 - Vercel
-

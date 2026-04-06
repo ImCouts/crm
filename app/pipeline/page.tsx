@@ -47,21 +47,30 @@ export default function PipelinePage() {
     setOverCol(colKey)
   }
 
-  function handleDragLeave() {
+  function handleDragLeave(e: React.DragEvent) {
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return
     setOverCol(null)
   }
 
   async function handleDrop(e: React.DragEvent, colKey: string) {
     e.preventDefault()
     setOverCol(null)
-    if (!dragId) return
+    const id = dragId
+    if (!id) return
+
+    const lead = leads.find(l => l.business_phone === id)
+    setDragId(null)
+    if (!lead) return
+
+    // Cancel drop if destination is the same column — no update, no reset
+    if (getStatus(lead) === colKey) return
 
     const now = new Date().toISOString()
 
     // Optimistic update
     setLeads(prev =>
       prev.map(l => {
-        if (l.business_phone !== dragId) return l
+        if (l.business_phone !== id) return l
         return {
           ...l,
           lead_status: {
@@ -72,13 +81,10 @@ export default function PipelinePage() {
         }
       })
     )
-    setDragId(null)
 
     // Sync to DB
-    const lead = leads.find(l => l.business_phone === dragId)
-    if (!lead) return
     await supabase.from('lead_status').upsert({
-      business_phone: dragId,
+      business_phone: id,
       status: colKey,
       call_count: lead.lead_status?.call_count ?? 0,
       last_called_at: lead.lead_status?.last_called_at ?? null,
