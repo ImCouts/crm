@@ -42,6 +42,7 @@ const emptyForm = {
   company_name: '',
   owner_name: '',
   owner_phone: '',
+  email: '',
   website: '',
   rbq: '',
   approx_rev: '',
@@ -93,6 +94,7 @@ export default function LeadsPage() {
       company_name: createForm.company_name.trim(),
       owner_name: createForm.owner_name.trim() || null,
       owner_phone: createForm.owner_phone.trim() || null,
+      email: createForm.email.trim() || null,
       website: createForm.website.trim() || null,
       rbq: stripNonDigits(createForm.rbq) || null,
       approx_rev: createForm.approx_rev ? Number(createForm.approx_rev) : null,
@@ -361,6 +363,18 @@ export default function LeadsPage() {
                     style={{ ...inputStyle, marginTop: 4, fontFamily: 'monospace' }}
                   />
                 </div>
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={createForm.email}
+                  onChange={e => setCreateForm(p => ({ ...p, email: e.target.value }))}
+                  placeholder="owner@company.com"
+                  style={{ ...inputStyle, marginTop: 4 }}
+                />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>

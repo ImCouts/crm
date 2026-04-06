@@ -15,6 +15,7 @@ export type Lead = {
   approx_rev: number | null
   industry: string | null
   employee_count: number | null
+  email: string | null
   created_at: string
 }
 

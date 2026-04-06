@@ -414,6 +414,13 @@ export default function LeadDrawer({
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <EditField label="Owner Name" value={fieldVal('owner_name') as string | null} onChange={v => setEditFields(p => ({ ...p, owner_name: v }))} />
                 <EditField label="Owner Phone" value={fieldVal('owner_phone') as string | null} onChange={v => setEditFields(p => ({ ...p, owner_phone: formatPhone(v) }))} placeholder="(xxx) xxx-xxxx" mono />
+              </div>
+
+              <div>
+                <EditField label="Email" value={fieldVal('email') as string | null} onChange={v => setEditFields(p => ({ ...p, email: v }))} placeholder="owner@company.com" />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <EditField label="Website" value={fieldVal('website') as string | null} onChange={v => setEditFields(p => ({ ...p, website: v }))} />
                 <EditField label="RBQ" value={fieldVal('rbq') as string | null} onChange={v => setEditFields(p => ({ ...p, rbq: v }))} />
                 <EditField label="Approx Revenue" value={fieldVal('approx_rev') as string | null} onChange={v => setEditFields(p => ({ ...p, approx_rev: v ? Number(v) : null }))} type="number" />
