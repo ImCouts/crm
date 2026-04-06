@@ -340,6 +340,16 @@ export default function LeadDrawer({
               </div>
 
               <div>
+                <Label>Business Phone</Label>
+                <input
+                  type="text"
+                  value={editFields.business_phone !== undefined ? (editFields.business_phone as string) : phone}
+                  onChange={e => setEditFields(p => ({ ...p, business_phone: e.target.value }))}
+                  style={{ ...inputStyle, marginTop: 4, fontFamily: 'monospace' }}
+                />
+              </div>
+
+              <div>
                 <EditField label="Industry" value={fieldVal('industry') as string | null} onChange={v => setEditFields(p => ({ ...p, industry: v }))} />
               </div>
 

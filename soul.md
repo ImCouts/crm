@@ -61,6 +61,7 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 | status_changed_at | timestamptz | default now() — set on insert and on every status change |
 
 > All table joins are on business_phone, not id. Never assume an id foreign key
+> **Cascading PK updates:** All foreign keys referencing leads.business_phone (in call_log, lead_status, notes, tasks) use ON UPDATE CASCADE. This allows creating a lead with a placeholder phone (e.g. "unknown-companyname" or "TBD-1712345678") and replacing it with the real number later via inline edit in the Lead Detail Drawer. On save of a business_phone edit: UPDATE leads SET business_phone = new_value WHERE business_phone = old_value — cascading FKs handle the rest.
 
 ### tasks
 | column         | type        | notes |
