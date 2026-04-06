@@ -18,6 +18,11 @@ const STATUS_LABELS: Record<string, string> = {
 
 type Tab = 'overview' | 'calls' | 'tasks' | 'notes'
 
+function localNow() {
+  const d = new Date()
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+}
+
 export default function LeadDrawer({
   lead,
   onClose,
@@ -33,11 +38,11 @@ export default function LeadDrawer({
   const [callLogs, setCallLogs] = useState<CallLog[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
   const [note, setNote] = useState('')
-  const [callDate, setCallDate] = useState('')
+  const [callDate, setCallDate] = useState(localNow())
   const [submitting, setSubmitting] = useState(false)
   const [editFields, setEditFields] = useState<Partial<Lead>>({})
   const [saving, setSaving] = useState(false)
-  const [newTask, setNewTask] = useState({ title: '', description: '', due_at: '' })
+  const [newTask, setNewTask] = useState({ title: '', description: '', due_at: localNow() })
   const [addingTask, setAddingTask] = useState(false)
   const [notes, setNotes] = useState<Note[]>([])
   const [noteContent, setNoteContent] = useState('')
@@ -109,7 +114,7 @@ export default function LeadDrawer({
   async function logCall() {
     if (!note.trim()) return
     setSubmitting(true)
-    const calledAt = callDate ? new Date(callDate).toISOString() : new Date().toISOString()
+    const calledAt = new Date(callDate).toISOString()
 
     await supabase.from('call_log').insert({
       business_phone: phone,
@@ -127,7 +132,7 @@ export default function LeadDrawer({
     }, { onConflict: 'business_phone' })
 
     setNote('')
-    setCallDate('')
+    setCallDate(localNow())
     setSubmitting(false)
     fetchCallLogs()
     onUpdate()
@@ -187,7 +192,7 @@ export default function LeadDrawer({
       due_at: new Date(newTask.due_at).toISOString(),
       completed: false,
     })
-    setNewTask({ title: '', description: '', due_at: '' })
+    setNewTask({ title: '', description: '', due_at: localNow() })
     setAddingTask(false)
     fetchTasks()
   }
@@ -447,8 +452,7 @@ export default function LeadDrawer({
                   type="datetime-local"
                   value={callDate}
                   onChange={e => setCallDate(e.target.value)}
-                  style={{ ...inputStyle, marginTop: 8 }}
-                  placeholder="Leave blank for now"
+                  style={{ ...inputStyle, marginTop: 8, fontFamily: 'monospace', colorScheme: 'dark' }}
                 />
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
                   Leave empty to use current time
@@ -557,7 +561,7 @@ export default function LeadDrawer({
                     type="datetime-local"
                     value={newTask.due_at}
                     onChange={e => setNewTask(p => ({ ...p, due_at: e.target.value }))}
-                    style={inputStyle}
+                    style={{ ...inputStyle, fontFamily: 'monospace', colorScheme: 'dark' }}
                   />
                   <button
                     onClick={addTask}
