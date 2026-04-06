@@ -67,7 +67,7 @@ export default function LeadDrawer({
   const [savingContact, setSavingContact] = useState(false)
   const [editingContactId, setEditingContactId] = useState<string | null>(null)
   const [editContactFields, setEditContactFields] = useState<{ name: string; phone: string; email: string; role: string }>({ name: '', phone: '', email: '', role: '' })
-  const [editingPhone, setEditingPhone] = useState(false)
+  const [overviewEditing, setOverviewEditing] = useState(false)
   const [phoneInput, setPhoneInput] = useState(lead.business_phone)
   const overlayRef = useRef<HTMLDivElement>(null)
 
@@ -199,12 +199,20 @@ export default function LeadDrawer({
   }
 
   async function saveLeadFields() {
-    if (Object.keys(editFields).length === 0) return
     setSaving(true)
-    await supabase.from('leads').update(editFields).eq('business_phone', phone)
+    if (Object.keys(editFields).length > 0) {
+      await supabase.from('leads').update(editFields).eq('business_phone', phone)
+      setEditFields({})
+      onUpdate()
+    }
     setSaving(false)
+    setOverviewEditing(false)
+  }
+
+  function cancelOverviewEdit() {
     setEditFields({})
-    onUpdate()
+    setPhoneInput(lead.business_phone)
+    setOverviewEditing(false)
   }
 
   async function updateStatus(status: string) {
@@ -342,6 +350,68 @@ export default function LeadDrawer({
           {/* OVERVIEW TAB */}
           {tab === 'overview' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Edit mode controls */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
+                {overviewEditing ? (
+                  <>
+                    <button
+                      onClick={cancelOverviewEdit}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid var(--border)',
+                        borderRadius: 6,
+                        padding: '5px 14px',
+                        fontSize: 12,
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={saveLeadFields}
+                      disabled={saving}
+                      style={{
+                        background: 'var(--accent)',
+                        color: '#000',
+                        border: 'none',
+                        borderRadius: 6,
+                        padding: '5px 14px',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: saving ? 'not-allowed' : 'pointer',
+                        opacity: saving ? 0.7 : 1,
+                      }}
+                    >
+                      {saving ? 'Saving...' : 'Save'}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setOverviewEditing(true)}
+                    title="Edit fields"
+                    style={{
+                      background: 'none',
+                      border: '1px solid var(--border)',
+                      borderRadius: 6,
+                      padding: '5px 10px',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      fontSize: 15,
+                      lineHeight: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)' }}
+                  >
+                    <span>✎</span>
+                    <span style={{ fontSize: 11, fontWeight: 500 }}>Edit</span>
+                  </button>
+                )}
+              </div>
+
               {/* Status */}
               <div>
                 <Label>Status</Label>
@@ -396,82 +466,50 @@ export default function LeadDrawer({
               </div>
 
               <div>
-                <EditField label="Company Name" value={fieldVal('company_name') as string | null} onChange={v => setEditFields(p => ({ ...p, company_name: v }))} />
+                <EditField label="Company Name" value={fieldVal('company_name') as string | null} onChange={v => setEditFields(p => ({ ...p, company_name: v }))} editing={overviewEditing} />
               </div>
 
               <div>
                 <Label>Business Phone</Label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                  {editingPhone ? (
+                  {overviewEditing ? (
                     <input
-                      autoFocus
                       type="text"
                       value={phoneInput}
                       onChange={e => setPhoneInput(e.target.value)}
+                      onBlur={() => setEditFields(p => ({ ...p, business_phone: phoneInput.trim() }))}
                       onKeyDown={e => {
-                        if (e.key === 'Enter') { setEditFields(p => ({ ...p, business_phone: phoneInput.trim() })); setEditingPhone(false) }
-                        if (e.key === 'Escape') { setPhoneInput(editFields.business_phone ?? phone); setEditingPhone(false) }
+                        if (e.key === 'Enter') setEditFields(p => ({ ...p, business_phone: phoneInput.trim() }))
                       }}
-                      onBlur={() => { setEditFields(p => ({ ...p, business_phone: phoneInput.trim() })); setEditingPhone(false) }}
-                      style={{ ...inputStyle, fontFamily: 'monospace', flex: 1 }}
+                      style={{ ...inputStyle, fontFamily: 'monospace' }}
                     />
                   ) : (
-                    <>
-                      <span style={{ fontFamily: 'monospace', fontSize: 13, color: 'var(--text-primary)', flex: 1 }}>
-                        {editFields.business_phone ?? phone}
-                      </span>
-                      <button
-                        onClick={() => { setPhoneInput(editFields.business_phone ?? phone); setEditingPhone(true) }}
-                        title="Edit business phone"
-                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 14, padding: '2px 4px', lineHeight: 1 }}
-                        onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
-                        onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
-                      >✎</button>
-                    </>
+                    <span style={{ fontFamily: 'monospace', fontSize: 13, color: 'var(--text-primary)', padding: '8px 0' }}>
+                      {editFields.business_phone ?? phone}
+                    </span>
                   )}
                 </div>
               </div>
 
               <div>
-                <EditField label="Industry" value={fieldVal('industry') as string | null} onChange={v => setEditFields(p => ({ ...p, industry: v }))} />
+                <EditField label="Industry" value={fieldVal('industry') as string | null} onChange={v => setEditFields(p => ({ ...p, industry: v }))} editing={overviewEditing} />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <EditField label="Owner Name" value={fieldVal('owner_name') as string | null} onChange={v => setEditFields(p => ({ ...p, owner_name: v }))} />
-                <EditField label="Owner Phone" value={fieldVal('owner_phone') as string | null} onChange={v => setEditFields(p => ({ ...p, owner_phone: formatPhone(v) }))} placeholder="(xxx) xxx-xxxx" mono />
+                <EditField label="Owner Name" value={fieldVal('owner_name') as string | null} onChange={v => setEditFields(p => ({ ...p, owner_name: v }))} editing={overviewEditing} />
+                <EditField label="Owner Phone" value={fieldVal('owner_phone') as string | null} onChange={v => setEditFields(p => ({ ...p, owner_phone: formatPhone(v) }))} placeholder="(xxx) xxx-xxxx" mono editing={overviewEditing} />
               </div>
 
               <div>
-                <EditField label="Email" value={fieldVal('email') as string | null} onChange={v => setEditFields(p => ({ ...p, email: v }))} placeholder="owner@company.com" />
+                <EditField label="Email" value={fieldVal('email') as string | null} onChange={v => setEditFields(p => ({ ...p, email: v }))} placeholder="owner@company.com" editing={overviewEditing} />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <EditField label="Website" value={fieldVal('website') as string | null} onChange={v => setEditFields(p => ({ ...p, website: v }))} />
-                <EditField label="RBQ" value={fieldVal('rbq') as string | null} onChange={v => setEditFields(p => ({ ...p, rbq: v }))} />
-                <EditField label="Approx Revenue" value={fieldVal('approx_rev') as string | null} onChange={v => setEditFields(p => ({ ...p, approx_rev: v ? Number(v) : null }))} type="number" />
-                <EditField label="Employee Count" value={fieldVal('employee_count') as string | null} onChange={v => setEditFields(p => ({ ...p, employee_count: v ? Number(v) : null }))} type="number" />
+                <EditField label="Website" value={fieldVal('website') as string | null} onChange={v => setEditFields(p => ({ ...p, website: v }))} editing={overviewEditing} />
+                <EditField label="RBQ" value={fieldVal('rbq') as string | null} onChange={v => setEditFields(p => ({ ...p, rbq: v }))} editing={overviewEditing} />
+                <EditField label="Approx Revenue" value={fieldVal('approx_rev') as string | null} onChange={v => setEditFields(p => ({ ...p, approx_rev: v ? Number(v) : null }))} type="number" editing={overviewEditing} />
+                <EditField label="Employee Count" value={fieldVal('employee_count') as string | null} onChange={v => setEditFields(p => ({ ...p, employee_count: v ? Number(v) : null }))} type="number" editing={overviewEditing} />
               </div>
-
-              {Object.keys(editFields).length > 0 && (
-                <button
-                  onClick={saveLeadFields}
-                  disabled={saving}
-                  style={{
-                    alignSelf: 'flex-start',
-                    background: 'var(--accent)',
-                    color: '#000',
-                    border: 'none',
-                    borderRadius: 6,
-                    padding: '8px 20px',
-                    fontWeight: 600,
-                    fontSize: 13,
-                    cursor: saving ? 'not-allowed' : 'pointer',
-                    opacity: saving ? 0.7 : 1,
-                  }}
-                >
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </button>
-              )}
 
               {/* Meta */}
               <div style={{ background: 'var(--bg-elevated)', borderRadius: 6, padding: 16, fontSize: 12, color: 'var(--text-muted)', display: 'flex', gap: 24 }}>
@@ -1119,6 +1157,7 @@ function EditField({
   type = 'text',
   placeholder,
   mono,
+  editing,
 }: {
   label: string
   value: string | number | null
@@ -1126,17 +1165,33 @@ function EditField({
   type?: string
   placeholder?: string
   mono?: boolean
+  editing?: boolean
 }) {
   return (
     <div>
       <Label>{label}</Label>
-      <input
-        type={type}
-        value={value ?? ''}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        style={{ ...inputStyle, marginTop: 4, ...(mono ? { fontFamily: 'monospace' } : {}) }}
-      />
+      {editing ? (
+        <input
+          type={type}
+          value={value ?? ''}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          style={{ ...inputStyle, marginTop: 4, ...(mono ? { fontFamily: 'monospace' } : {}) }}
+        />
+      ) : (
+        <div style={{
+          marginTop: 4,
+          padding: '8px 0',
+          fontSize: 13,
+          color: value != null && value !== '' ? 'var(--text-primary)' : 'var(--text-muted)',
+          fontFamily: mono ? 'monospace' : 'inherit',
+          minHeight: 32,
+          display: 'flex',
+          alignItems: 'center',
+        }}>
+          {value != null && value !== '' ? value : '—'}
+        </div>
+      )}
     </div>
   )
 }
