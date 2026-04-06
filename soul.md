@@ -138,6 +138,7 @@ dark developer UI aesthetic with high-contrast surfaces, monospace accents, and 
 - "Log a Call" form: note textarea + submit button
 - On submit: INSERT into call_log, INCREMENT call_count, UPDATE last_called_at in lead_status
 - Inline editing of lead fields with save button
+- business_phone field is locked (read-only) by default — only editable after clicking the ✎ pencil button next to it; Enter or blur confirms, Escape cancels
 - Contacts tab (positioned between Overview and Calls):
   - Lists all contacts for this lead (from contacts table, ordered by created_at asc)
   - Each contact displays: name, phone, email, role — all fields optional

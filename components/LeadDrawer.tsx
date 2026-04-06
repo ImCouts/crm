@@ -67,6 +67,8 @@ export default function LeadDrawer({
   const [savingContact, setSavingContact] = useState(false)
   const [editingContactId, setEditingContactId] = useState<string | null>(null)
   const [editContactFields, setEditContactFields] = useState<{ name: string; phone: string; email: string; role: string }>({ name: '', phone: '', email: '', role: '' })
+  const [editingPhone, setEditingPhone] = useState(false)
+  const [phoneInput, setPhoneInput] = useState(lead.business_phone)
   const overlayRef = useRef<HTMLDivElement>(null)
 
   const phone = lead.business_phone
@@ -399,12 +401,35 @@ export default function LeadDrawer({
 
               <div>
                 <Label>Business Phone</Label>
-                <input
-                  type="text"
-                  value={editFields.business_phone !== undefined ? (editFields.business_phone as string) : phone}
-                  onChange={e => setEditFields(p => ({ ...p, business_phone: e.target.value }))}
-                  style={{ ...inputStyle, marginTop: 4, fontFamily: 'monospace' }}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                  {editingPhone ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={phoneInput}
+                      onChange={e => setPhoneInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') { setEditFields(p => ({ ...p, business_phone: phoneInput.trim() })); setEditingPhone(false) }
+                        if (e.key === 'Escape') { setPhoneInput(editFields.business_phone ?? phone); setEditingPhone(false) }
+                      }}
+                      onBlur={() => { setEditFields(p => ({ ...p, business_phone: phoneInput.trim() })); setEditingPhone(false) }}
+                      style={{ ...inputStyle, fontFamily: 'monospace', flex: 1 }}
+                    />
+                  ) : (
+                    <>
+                      <span style={{ fontFamily: 'monospace', fontSize: 13, color: 'var(--text-primary)', flex: 1 }}>
+                        {editFields.business_phone ?? phone}
+                      </span>
+                      <button
+                        onClick={() => { setPhoneInput(editFields.business_phone ?? phone); setEditingPhone(true) }}
+                        title="Edit business phone"
+                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 14, padding: '2px 4px', lineHeight: 1 }}
+                        onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+                      >✎</button>
+                    </>
+                  )}
+                </div>
               </div>
 
               <div>
